@@ -1,0 +1,13 @@
+.{
+    .name = .vis,
+    .version = "0.9.0-git",
+    .dependencies = .{
+        .upstream = .{
+            .url = "https://github.com/martanne/vis/archive/254329d9f4f1df1158397080d403f3f112918aff.tar.gz",
+            .hash = "N-V-__8AAEPuoQBpyXKttTMkUGmkk1ufcO0ZRZd57xRV71wp",
+        },
+    },
+    .minimum_zig_version = "0.16.0",
+    .paths = .{""},
+    .fingerprint = 0xd20e3d98cfe0c9b6,
+}
