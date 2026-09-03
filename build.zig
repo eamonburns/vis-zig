@@ -7,6 +7,7 @@ const API = "3234";
 const Config = struct {
     curses: bool,
     lua: bool,
+    lpeg: bool,
     help: bool,
 };
 
@@ -17,8 +18,13 @@ pub fn build(b: *std.Build) void {
     const config: Config = .{
         .curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true,
         .lua = b.option(bool, "enable-lua", "build with Lua support (default: true)") orelse true,
+        .lpeg = b.option(bool, "enable-lpeg-static", "build with LPeg static linking (default: true)") orelse true,
         .help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true,
     };
+    if (config.lpeg and !config.lua) {
+        std.log.err("need lua support for built-in lpeg", .{});
+        return;
+    }
     const share_prefix = b.fmt("{s}/share", .{b.install_prefix});
 
     const upstream_dep = b.dependency("upstream", .{});
@@ -90,7 +96,8 @@ pub fn build(b: *std.Build) void {
         } else {
             if (b.lazyDependency("ncurses", .{
                 .target = target,
-                .optimize = optimize,
+                // NOTE: ncurses crashes the program at startup if optimized with ReleaseSafe or Debug
+                .optimize = .ReleaseFast,
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("ncurses"));
             }
@@ -109,6 +116,28 @@ pub fn build(b: *std.Build) void {
                 .lang = .lua52,
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("lua"));
+            }
+        }
+    }
+
+    // === CONFIG_LPEG === //
+    if (config.lpeg) {
+        vis_exe.root_module.addCMacro("CONFIG_LPEG", "1");
+        if (b.systemIntegrationOption("lpeg", .{ .default = false })) {
+            vis_exe.root_module.linkSystemLibrary("lpeg", .{});
+        } else {
+            if (b.lazyDependency("lpeg", .{})) |dep| {
+                vis_exe.root_module.addCSourceFiles(.{
+                    .files = &.{
+                        "lpcap.c",
+                        "lpcode.c",
+                        "lpcset.c",
+                        "lpprint.c",
+                        "lptree.c",
+                        "lpvm.c",
+                    },
+                    .root = dep.path("."),
+                });
             }
         }
     }
@@ -159,6 +188,14 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.installArtifact(vis_digraph_exe);
+
+    // run step
+    const run_step = b.step("run", "Run vis");
+    const run_cmd = b.addRunArtifact(vis_exe);
+    run_step.dependOn(&run_cmd.step);
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
 }
 
 const Flags = []const []const u8;

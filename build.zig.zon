@@ -18,6 +18,11 @@
             .hash = "zlua-0.1.0-hGRpCwGVBQCZRZ2QEHLENoYjRj-nNjD500_BmMsXeqT4",
             .lazy = true,
         },
+        .lpeg = .{
+            .url = "https://www.inf.puc-rio.br/~roberto/lpeg/lpeg-1.1.0.tar.gz",
+            .hash = "N-V-__8AAMnaAwCEutreuREG3QayBVEZqUTDQFY1Nsrv2OIt",
+            .lazy = true,
+        },
     },
     .minimum_zig_version = "0.16.0",
     .paths = .{""},
