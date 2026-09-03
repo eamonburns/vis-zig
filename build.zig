@@ -5,6 +5,7 @@ const VERSION = @import("build.zig.zon").version;
 const API = "3234";
 
 const Config = struct {
+    curses: bool,
     help: bool,
 };
 
@@ -13,6 +14,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const config: Config = .{
+        .curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true,
         .help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true,
     };
     const share_prefix = b.fmt("{s}/share", .{b.install_prefix});
@@ -81,6 +83,21 @@ pub fn build(b: *std.Build) void {
     _ = config_header.addCopyFile(upstream_dep.path("config.def.h"), "config.h");
     vis_exe.root_module.addIncludePath(config_header.getDirectory());
     b.installArtifact(vis_exe);
+
+    // -Denable-curses
+    if (config.curses) {
+        vis_exe.root_module.addCMacro("CONFIG_CURSES", "1");
+        if (b.systemIntegrationOption("curses", .{ .default = false })) {
+            vis_exe.root_module.linkSystemLibrary("ncurses", .{});
+        } else {
+            if (b.lazyDependency("ncurses", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                vis_exe.root_module.linkLibrary(dep.artifact("ncurses"));
+            }
+        }
+    }
 
     const vis_menu_exe = b.addExecutable(.{
         .name = "vis-menu",

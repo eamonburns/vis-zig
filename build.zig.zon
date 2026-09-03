@@ -6,6 +6,11 @@
             .url = "https://github.com/martanne/vis/archive/254329d9f4f1df1158397080d403f3f112918aff.tar.gz",
             .hash = "N-V-__8AAEPuoQBpyXKttTMkUGmkk1ufcO0ZRZd57xRV71wp",
         },
+        .ncurses = .{
+            .url = "https://github.com/eamonburns/ncurses-zig/archive/549f4ae9f96749457172d3179878eb9bbaeda82e.tar.gz",
+            .hash = "ncurses-6.4.0-9-yiDf6WCSNwBpFeJdzL7I4mwfyT3ZSJAaB8nbO2SmnwSq",
+            .lazy = true,
+        },
     },
     .minimum_zig_version = "0.16.0",
     .paths = .{""},
