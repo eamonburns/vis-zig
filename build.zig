@@ -8,7 +8,28 @@ const Config = struct {
     curses: bool,
     lua: bool,
     lpeg: bool,
+    lua_lang: LuaLanguage,
+    lua_libname: ?[]const u8,
     help: bool,
+};
+
+/// The Lua version to link.
+pub const LuaLanguage = enum {
+    lua51,
+    lua52,
+    lua53,
+    lua54,
+    lua55,
+
+    pub fn systemLibName(lang: LuaLanguage) []const u8 {
+        return switch (lang) {
+            .lua51 => "lua-5.1",
+            .lua52 => "lua-5.2",
+            .lua53 => "lua-5.3",
+            .lua54 => "lua-5.4",
+            .lua55 => "lua-5.5",
+        };
+    }
 };
 
 pub fn build(b: *std.Build) void {
@@ -19,6 +40,8 @@ pub fn build(b: *std.Build) void {
         const cfg_curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true;
         const cfg_lua = b.option(bool, "enable-lua", "build with Lua support (default: true)") orelse true;
         const cfg_lpeg = b.option(bool, "enable-lpeg-static", "build with LPeg static linking (default: <enable-lua>)");
+        const cfg_lua_lang = b.option(LuaLanguage, "lua-lang", "version of Lua to link (default: lua55)") orelse .lua55;
+        const cfg_lua_libname = b.option([]const u8, "lua-libname", "the name of the system library to link (default: lua-<version>)");
         const cfg_help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true;
         if (cfg_lpeg) |lpeg| if (lpeg and !cfg_lua) {
             std.log.err("need lua support for built-in lpeg", .{});
@@ -29,6 +52,8 @@ pub fn build(b: *std.Build) void {
             .curses = cfg_curses,
             .lua = cfg_lua,
             .lpeg = cfg_lpeg orelse cfg_lua,
+            .lua_lang = cfg_lua_lang,
+            .lua_libname = cfg_lua_libname,
             .help = cfg_help,
         };
     };
@@ -115,12 +140,15 @@ pub fn build(b: *std.Build) void {
     if (config.lua) {
         vis_exe.root_module.addCMacro("CONFIG_LUA", "1");
         if (b.systemIntegrationOption("lua", .{ .default = false })) {
-            vis_exe.root_module.linkSystemLibrary("lua5.2", .{});
+            vis_exe.root_module.linkSystemLibrary(
+                config.lua_libname orelse config.lua_lang.systemLibName(),
+                .{},
+            );
         } else {
             if (b.lazyDependency("zlua", .{
                 .target = target,
                 .optimize = optimize,
-                .lang = .lua55,
+                .lang = config.lua_lang,
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("lua"));
             }
