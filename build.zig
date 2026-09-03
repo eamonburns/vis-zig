@@ -15,16 +15,23 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const config: Config = .{
-        .curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true,
-        .lua = b.option(bool, "enable-lua", "build with Lua support (default: true)") orelse true,
-        .lpeg = b.option(bool, "enable-lpeg-static", "build with LPeg static linking (default: true)") orelse true,
-        .help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true,
+    const config: Config = cfg: {
+        const cfg_curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true;
+        const cfg_lua = b.option(bool, "enable-lua", "build with Lua support (default: true)") orelse true;
+        const cfg_lpeg = b.option(bool, "enable-lpeg-static", "build with LPeg static linking (default: <enable-lua>)");
+        const cfg_help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true;
+        if (cfg_lpeg) |lpeg| if (lpeg and !cfg_lua) {
+            std.log.err("need lua support for built-in lpeg", .{});
+            return;
+        };
+
+        break :cfg .{
+            .curses = cfg_curses,
+            .lua = cfg_lua,
+            .lpeg = cfg_lpeg orelse cfg_lua,
+            .help = cfg_help,
+        };
     };
-    if (config.lpeg and !config.lua) {
-        std.log.err("need lua support for built-in lpeg", .{});
-        return;
-    }
     const share_prefix = b.fmt("{s}/share", .{b.install_prefix});
 
     const upstream_dep = b.dependency("upstream", .{});
@@ -48,7 +55,6 @@ pub fn build(b: *std.Build) void {
         // TODO: getCFlagsAcl(b, config)
         // TODO: getCFlagsSelinux(b, config)
         // TODO: getCFlagsTre(b, config)
-        // TODO: getCFlagsLPeg(b, config)
         cflags_std,
         &.{
             "-DVIS_EXPORT=static",
@@ -60,7 +66,6 @@ pub fn build(b: *std.Build) void {
         // TODO: getLdFlagsAcl(b, config)
         // TODO: getLdFlagsSelinux(b, config)
         // TODO: getLdFlagsTre(b, config)
-        // TODO: getLdFlagsLPeg(b, config)
         ldflags_std,
     });
 
