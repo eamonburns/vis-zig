@@ -6,6 +6,7 @@ const API = "3234";
 
 const Config = struct {
     curses: bool,
+    lua: bool,
     help: bool,
 };
 
@@ -15,6 +16,7 @@ pub fn build(b: *std.Build) void {
 
     const config: Config = .{
         .curses = b.option(bool, "enable-curses", "build with Curses terminal output (default: true)") orelse true,
+        .lua = b.option(bool, "enable-lua", "build with Lua support (default: true)") orelse true,
         .help = b.option(bool, "enable-help", "build with built-in help texts (default: true)") orelse true,
     };
     const share_prefix = b.fmt("{s}/share", .{b.install_prefix});
@@ -27,7 +29,7 @@ pub fn build(b: *std.Build) void {
         getCFlagsStd(b, target),
         &.{
             b.fmt("-DVERSION=\"{s}\"", .{VERSION}),
-            b.fmt("-DVIS_API=\"{s}\"", .{API}),
+            b.fmt("-DVIS_API={s}", .{API}),
         },
     });
     const ldflags_std = getLdFlagsStd(b);
@@ -37,11 +39,9 @@ pub fn build(b: *std.Build) void {
     const cflags_vis = concatFlags(b, &.{
         cflags_auto,
         // TODO: getCFlagsTermkey(b, config)
-        // TODO: getCFlagsCurses(b, config)
         // TODO: getCFlagsAcl(b, config)
         // TODO: getCFlagsSelinux(b, config)
         // TODO: getCFlagsTre(b, config)
-        // TODO: getCFlagsLua(b, config)
         // TODO: getCFlagsLPeg(b, config)
         cflags_std,
         &.{
@@ -51,11 +51,9 @@ pub fn build(b: *std.Build) void {
     });
     const ldflags_vis = concatFlags(b, &.{
         ldflags_auto,
-        // TODO: getLdFlagsCurses(b, config)
         // TODO: getLdFlagsAcl(b, config)
         // TODO: getLdFlagsSelinux(b, config)
         // TODO: getLdFlagsTre(b, config)
-        // TODO: getLdFlagsLua(b, config)
         // TODO: getLdFlagsLPeg(b, config)
         ldflags_std,
     });
@@ -84,7 +82,7 @@ pub fn build(b: *std.Build) void {
     vis_exe.root_module.addIncludePath(config_header.getDirectory());
     b.installArtifact(vis_exe);
 
-    // -Denable-curses
+    // === CONFIG_CURSES === //
     if (config.curses) {
         vis_exe.root_module.addCMacro("CONFIG_CURSES", "1");
         if (b.systemIntegrationOption("curses", .{ .default = false })) {
@@ -95,6 +93,22 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("ncurses"));
+            }
+        }
+    }
+
+    // === CONFIG_LUA === //
+    if (config.lua) {
+        vis_exe.root_module.addCMacro("CONFIG_LUA", "1");
+        if (b.systemIntegrationOption("lua", .{ .default = false })) {
+            vis_exe.root_module.linkSystemLibrary("lua5.2", .{});
+        } else {
+            if (b.lazyDependency("zlua", .{
+                .target = target,
+                .optimize = optimize,
+                .lang = .lua52,
+            })) |dep| {
+                vis_exe.root_module.linkLibrary(dep.artifact("lua"));
             }
         }
     }

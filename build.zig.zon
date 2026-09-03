@@ -11,6 +11,13 @@
             .hash = "ncurses-6.4.0-9-yiDf6WCSNwBpFeJdzL7I4mwfyT3ZSJAaB8nbO2SmnwSq",
             .lazy = true,
         },
+        .zlua = .{
+            // TODO: Investigate bug with https://github.com/natecraddock/ziglua/archive/9ae39fa50b1ab8427d35f963216116d7bff1e584.tar.gz
+            // the `lua` artifact isn't found for lua51, lua52, lua53, and lua54 (but it does work for lua55 and luajit)
+            .url = "https://github.com/natecraddock/ziglua/archive/9a520d0bbaac378d2e926c76edb584da104941dc.tar.gz",
+            .hash = "zlua-0.1.0-hGRpCwGVBQCZRZ2QEHLENoYjRj-nNjD500_BmMsXeqT4",
+            .lazy = true,
+        },
     },
     .minimum_zig_version = "0.16.0",
     .paths = .{""},
