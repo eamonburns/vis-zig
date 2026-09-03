@@ -69,6 +69,8 @@ pub fn build(b: *std.Build) void {
         ldflags_std,
     });
 
+    // Executable: vis
+
     const vis_exe = b.addExecutable(.{
         .name = "vis",
         .root_module = b.createModule(.{
@@ -93,7 +95,7 @@ pub fn build(b: *std.Build) void {
     vis_exe.root_module.addIncludePath(config_header.getDirectory());
     b.installArtifact(vis_exe);
 
-    // === CONFIG_CURSES === //
+    // CONFIG_CURSES
     if (config.curses) {
         vis_exe.root_module.addCMacro("CONFIG_CURSES", "1");
         if (b.systemIntegrationOption("curses", .{ .default = false })) {
@@ -109,7 +111,7 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    // === CONFIG_LUA === //
+    // CONFIG_LUA
     if (config.lua) {
         vis_exe.root_module.addCMacro("CONFIG_LUA", "1");
         if (b.systemIntegrationOption("lua", .{ .default = false })) {
@@ -118,14 +120,14 @@ pub fn build(b: *std.Build) void {
             if (b.lazyDependency("zlua", .{
                 .target = target,
                 .optimize = optimize,
-                .lang = .lua52,
+                .lang = .lua55,
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("lua"));
             }
         }
     }
 
-    // === CONFIG_LPEG === //
+    // CONFIG_LPEG
     if (config.lpeg) {
         vis_exe.root_module.addCMacro("CONFIG_LPEG", "1");
         if (b.systemIntegrationOption("lpeg", .{ .default = false })) {
@@ -146,6 +148,8 @@ pub fn build(b: *std.Build) void {
             }
         }
     }
+
+    // Executable: vis-menu
 
     const vis_menu_exe = b.addExecutable(.{
         .name = "vis-menu",
@@ -171,6 +175,8 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(vis_menu_exe);
 
+    // Executable: vis-digraph
+
     const vis_digraph_exe = b.addExecutable(.{
         .name = "vis-digraph",
         .root_module = b.createModule(.{
@@ -194,7 +200,8 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(vis_digraph_exe);
 
-    // run step
+    // Step: run
+
     const run_step = b.step("run", "Run vis");
     const run_cmd = b.addRunArtifact(vis_exe);
     run_step.dependOn(&run_cmd.step);
