@@ -15,7 +15,6 @@ const Config = struct {
 
 /// The Lua version to link.
 pub const LuaLanguage = enum {
-    @"5.1",
     @"5.2",
     @"5.3",
     @"5.4",
@@ -26,6 +25,22 @@ pub const LuaLanguage = enum {
             inline else => |t| "lua-" ++ @tagName(t),
         };
     }
+
+    pub fn toZigLuaLang(lang: LuaLanguage) ZigLuaLang {
+        return switch (lang) {
+            .@"5.2" => .lua52,
+            .@"5.3" => .lua53,
+            .@"5.4" => .lua54,
+            .@"5.5" => .lua55,
+        };
+    }
+
+    const ZigLuaLang = enum {
+        lua52,
+        lua53,
+        lua54,
+        lua55,
+    };
 };
 
 pub fn build(b: *std.Build) void {
@@ -144,7 +159,7 @@ pub fn build(b: *std.Build) void {
             if (b.lazyDependency("zlua", .{
                 .target = target,
                 .optimize = optimize,
-                .lang = config.lua_lang,
+                .lang = config.lua_lang.toZigLuaLang(),
             })) |dep| {
                 vis_exe.root_module.linkLibrary(dep.artifact("lua"));
             }
